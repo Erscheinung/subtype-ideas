@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Subtype Mirror</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root {
+    --bg: #f3f4f6;
+    --panel: #ffffff;
+    --ink: #141922;
+    --muted: #5d6573;
+    --faint: #c9ced7;
+    --line: #dde1e8;
+    --c-EJ: #b06a12;
+    --c-EP: #c0392f;
+    --c-IJ: #2c5fc4;
+    --c-IP: #1d7f72;
+    --warn: #9a3a8f;
+    --sans: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #0c0f14;
+      --panel: #131821;
+      --ink: #e5e8ee;
+      --muted: #8d95a3;
+      --faint: #3a414d;
+      --line: #232a35;
+      --c-EJ: #e6a54c;
+      --c-EP: #ee7b69;
+      --c-IJ: #82a8ff;
+      --c-IP: #5cc6b2;
+      --warn: #e38ad8;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0c0f14;
+    --panel: #131821;
+    --ink: #e5e8ee;
+    --muted: #8d95a3;
+    --faint: #3a414d;
+    --line: #232a35;
+    --c-EJ: #e6a54c;
+    --c-EP: #ee7b69;
+    --c-IJ: #82a8ff;
+    --c-IP: #5cc6b2;
+    --warn: #e38ad8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 1280px; margin: 0 auto; padding-inline: 20px; padding-block: 32px 56px; display: grid; gap: 22px; }
+  header { display: grid; gap: 6px; }
+  .eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+  h1 { margin: 0; font-size: clamp(26px, 4vw, 38px); font-weight: 500; letter-spacing: -.015em; text-wrap: balance; }
+  .lede { margin: 0; max-width: 64ch; color: var(--muted); }
+  .stage { display: flex; flex-wrap: wrap; gap: 22px; align-items: flex-start; }
+  .plane-wrap { flex: 1 1 540px; max-width: 780px; aspect-ratio: 1 / 1; position: relative; }
+  .plane-wrap canvas { width: 100%; height: 100%; display: block; }
+  .side { flex: 1 1 320px; max-width: 460px; display: grid; gap: 16px; min-width: 0; }
+  .label { font-family: var(--mono); font-size: 11px; letter-spacing: .07em; text-transform: uppercase; color: var(--muted); }
+  table.grid { width: 100%; border-collapse: separate; border-spacing: 3px; font-family: var(--mono); font-variant-numeric: tabular-nums; font-size: 14px; }
+  .grid th { font-weight: 500; color: var(--muted); font-size: 11px; text-align: center; padding: 2px 0; }
+  .grid th small { display: block; font-size: 10px; color: var(--muted); opacity: .75; font-weight: 400; }
+  .grid th.row { text-align: left; padding-right: 4px; white-space: nowrap; }
+  .grid td { height: 46px; text-align: center; border-radius: 4px; background: transparent; outline: 1px solid var(--line); outline-offset: -1px; position: relative; transition: outline-color .3s; }
+  .grid td.is-true { outline: 1.5px solid var(--ink); }
+  .grid td.is-ghost { outline: 1.5px dashed var(--muted); }
+  .grid td.is-true::after { content: "truth"; position: absolute; top: 1px; right: 3px; font-size: 8.5px; color: var(--muted); letter-spacing: .04em; }
+  .grid td.is-ghost::after { content: "mirror"; position: absolute; top: 1px; right: 3px; font-size: 8.5px; color: var(--muted); letter-spacing: .04em; }
+  .marg { display: grid; gap: 6px; }
+  .bar { display: flex; height: 10px; border-radius: 3px; overflow: hidden; background: var(--line); }
+  .bar span { height: 100%; transition: width .15s linear; }
+  .bar-row { display: grid; grid-template-columns: 64px 1fr; align-items: center; gap: 8px; font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .verdict { font-family: var(--mono); font-size: 14px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); min-height: 3.2em; }
+  .verdict b { font-weight: 600; }
+  .verdict.abstain b { color: var(--warn); }
+  .controls { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .scenes { display: flex; flex-wrap: wrap; gap: 6px; }
+  button { font: inherit; font-family: var(--mono); font-size: 12px; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 7px 10px; cursor: pointer; position: relative; overflow: hidden; }
+  button:hover { border-color: var(--faint); }
+  button:focus-visible { outline: 2px solid var(--c-IJ); outline-offset: 2px; }
+  button[aria-pressed="true"] { border-color: var(--ink); }
+  button .prog { position: absolute; left: 0; bottom: 0; height: 2px; background: var(--ink); width: 0; }
+  .spacer { flex: 1; }
+  .caption { margin: 0; max-width: 72ch; min-height: 4.8em; font-size: 17px; }
+  .rec .wrap { padding-block: 20px; }
+  .rec header, .rec .controls, .rec .notes, .rec .explore { display: none !important; }
+  #shot { display: grid; gap: 18px; background: var(--bg); padding: 4px; }
+  .caption .n { font-family: var(--mono); font-size: 12px; color: var(--muted); margin-right: 8px; }
+  .explore { display: flex; flex-wrap: wrap; gap: 18px; align-items: center; font-family: var(--mono); font-size: 12px; color: var(--muted); padding: 12px 14px; border: 1px dashed var(--faint); border-radius: 6px; }
+  .explore label { display: flex; align-items: center; gap: 8px; }
+  .explore input[type=range] { width: 120px; accent-color: var(--ink); }
+  .notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 22px; border-top: 1px solid var(--line); padding-top: 22px; }
+  .notes h2 { margin: 0 0 6px; font-size: 14px; font-weight: 600; }
+  .notes p, .notes li { margin: 0; color: var(--muted); font-size: 14px; }
+  .notes ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; }
+  .notes code, .eq { font-family: var(--mono); font-size: 12.5px; color: var(--ink); }
+  .eq { display: block; padding: 8px 10px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; overflow-x: auto; white-space: pre; margin-bottom: 8px; }
+  a { color: var(--c-IJ); }
+</style>
+</head>
+<body>
+<main class="wrap">
+  <header>
+    <div class="eyebrow">Gulenko DCNH · Phase S0 · theory priors, no data</div>
+    <h1>One point, two people</h1>
+    <p class="lede">Subtypes push the same two axes the classifier measures. From one channel, a type and its mirror can land on the same spot. A second channel that the subtype barely moves can tell them apart.</p>
+  </header>
+
+  <div id="shot">
+  <section class="stage">
+    <div class="plane-wrap"><canvas id="plane" aria-label="Temperament plane with observed motor and lexical readings"></canvas></div>
+    <aside class="side">
+      <div>
+        <div class="label" style="margin-bottom:6px">Posterior · type temperament × subtype</div>
+        <table class="grid" id="grid"></table>
+      </div>
+      <div class="marg">
+        <div class="bar-row"><span>type</span><div class="bar" id="barT"></div></div>
+        <div class="bar-row"><span>subtype</span><div class="bar" id="barS"></div></div>
+      </div>
+      <div class="verdict" id="verdict" aria-live="polite"></div>
+    </aside>
+  </section>
+  <p class="caption" id="caption"></p>
+  </div>
+
+  <div class="controls">
+    <div class="scenes" id="scenes"></div>
+    <span class="spacer"></span>
+    <button id="play" type="button">Pause</button>
+    <button id="exploreBtn" type="button" aria-pressed="false">Explore</button>
+  </div>
+
+  <div class="explore" id="explorePanel" hidden>
+    <span>Drag the dot (motor) and the ring (lexical).</span>
+    <label><input type="checkbox" id="useL" checked> lexical channel</label>
+    <label>σ motor <input type="range" id="sm" min="0.1" max="0.8" step="0.01" value="0.3"><span id="smV">0.30</span></label>
+    <label>σ lexical <input type="range" id="sl" min="0.1" max="0.8" step="0.01" value="0.3"><span id="slV">0.30</span></label>
+  </div>
+
+  <section class="notes">
+    <div>
+      <h2>Model</h2>
+      <span class="eq">x_c = (1 − λ_c)·μ[type] + λ_c·μ[subtype] + ε_c
+λ_motor ~ Beta(4,6)   λ_lex ~ Beta(2,8)</span>
+      <p>Each channel mixes the type's corner with the subtype's corner. λ is integrated out on a grid. The prior over the 16 cells is flat. The verdict abstains below 60%, or when the runner-up is the mirror cell with more than half the leader's weight.</p>
+    </div>
+    <div>
+      <h2>Subtype ↔ corner</h2>
+      <ul>
+        <li><code>D</code> Dominant gives energy linearly → EJ</li>
+        <li><code>C</code> Creative gives flexibly → EP</li>
+        <li><code>N</code> Normalizing preserves linearly → IJ</li>
+        <li><code>H</code> Harmonizing preserves flexibly → IP</li>
+      </ul>
+    </div>
+    <div>
+      <h2>What this does not show</h2>
+      <p>The λ priors are guesses from theory. Hypothesis H‑S1 says movement carries more subtype than content does, and consented data must test it. If the two λ values turn out equal, stop and abstain. Sources: <a href="https://socioniks.net/en/article/?id=34" target="_blank" rel="noopener">socioniks.net id=34</a>, <a href="https://socioniks.net/en/article/?id=205" target="_blank" rel="noopener">id=205</a>.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+(() => {
+  // ---------- model ----------
+  const T = ['EJ', 'EP', 'IJ', 'IP'];
+  const SUB = ['D', 'C', 'N', 'H'];                 // SUB[i] pulls toward corner T[i]
+  const TNAME = { EJ: 'Linear-Assertive', EP: 'Flexible-Agile', IJ: 'Balanced-Stable', IP: 'Receptive-Adaptive' };
+  const SNAME = { D: 'Dominant', C: 'Creative', N: 'Normalizing', H: 'Harmonizing' };
+  const C = [[-1, 1], [-1, -1], [1, 1], [1, -1]];  // (ie, jp): ie +1 = introverted, jp +1 = judging
+  const R = 1.45;
+
+  const LAM = Array.from({ length: 50 }, (_, i) => 0.01 + i * 0.02);
+  const betaW = (a, b) => { const w = LAM.map(l => l ** (a - 1) * (1 - l) ** (b - 1)); const s = w.reduce((x, y) => x + y, 0); return w.map(v => v / s); };
+  const WM = betaW(4, 6), WL = betaW(2, 8);
+  const mix = (t, s, l) => [(1 - l) * C[t][0] + l * C[s][0], (1 - l) * C[t][1] + l * C[s][1]];
+  const g = (p, q, s) => { const dx = p[0] - q[0], dy = p[1] - q[1]; return Math.exp(-(dx * dx + dy * dy) / (2 * s * s)); };
+  function chan(obs, t, s, sig, W) {
+    if (t === s) return g(obs, C[t], sig);
+    let sum = 0;
+    for (let i = 0; i < LAM.length; i++) sum += W[i] * g(obs, mix(t, s, LAM[i]), sig);
+    return sum;
+  }
+  function posterior(o) {
+    const out = new Float64Array(16);
+    if (!o.useM && !o.useL) { out.fill(1 / 16); return out; }
+    let z = 0;
+    for (let t = 0; t < 4; t++) for (let s = 0; s < 4; s++) {
+      let L = 1;
+      if (o.useM) L *= chan(o.m, t, s, o.sm, WM);
+      if (o.useL) L *= chan(o.l, t, s, o.sl, o.WL || WL);
+      out[t * 4 + s] = L; z += L;
+    }
+    if (z <= 0) { out.fill(1 / 16); return out; }
+    for (let i = 0; i < 16; i++) out[i] /= z;
+    return out;
+  }
+  function mapLam(obs, t, s, sig, W) {
+    if (t === s) return 0;
+    let best = 0, bl = 0;
+    for (let i = 0; i < LAM.length; i++) { const v = W[i] * g(obs, mix(t, s, LAM[i]), sig); if (v > best) { best = v; bl = LAM[i]; } }
+    return bl;
+  }
+
+  // ---------- scenes ----------
+  const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
+  const ez = x => { x = clamp(x); return x < .5 ? 4 * x * x * x : 1 - (-2 * x + 2) ** 3 / 2; };
+  const P = { t: 2, s: 0 };   // IJ type, Dominant subtype
+  const G = { t: 0, s: 2 };   // EJ type, Normalizing subtype (the mirror)
+  const base = { anchors: 1, ambient: .35, pA: 0, pLm: 0, pLex: 0, pLl: 0, gA: 0, gLm: 0, gLex: 0, gLl: .15, gCross: 0, obsM: false, obsL: false, marks: false };
+  const SCENES = [
+    { name: 'Corners', dur: 7,
+      cap: 'Four temperaments sit at the corners of the IE × JP plane that the classifier already scores. Each subtype is described as an energy style, and each style points at one of these corners.',
+      state: u => ({ ...base, anchors: ez(u / 1.6), ambient: 1 }) },
+    { name: 'Pull', dur: 8,
+      cap: 'A Balanced-Stable (IJ) person with a Dominant subtype. Dominant energy is linear and outgoing, which is the EJ corner. In the motor channel (movement, gaze tempo, speech rate) it pulls the reading almost to the midline.',
+      state: u => ({ ...base, pA: ez(u / 1), pLm: .45 * ez((u - 1) / 3.2), obsM: u > .6, marks: true }) },
+    { name: 'Mirror', dur: 8,
+      cap: 'An EJ person with a Normalizing subtype gets pulled the other way and lands on the same spot. From one channel the two readings are the same, so the grid splits between them.',
+      state: u => ({ ...base, pA: 1, pLm: .45, gA: ez((u - .5) / 1.2), gLm: .55 * ez((u - 1.2) / 3), obsM: true, marks: true }) },
+    { name: 'Second channel', dur: 9,
+      cap: 'Add a channel the subtype barely moves: what people say and how they argue. The real ring stays near IJ. The mirror predicts a ring near EJ, and none shows up there.',
+      state: u => ({ ...base, pA: 1, pLm: .45, gA: 1, gLm: .55, pLex: ez((u - .3) / .8), pLl: .15 * ez((u - .6) / 2.4), gLex: ez((u - .3) / .8), gLl: .15, gCross: ez((u - 4.2) / 1), obsM: true, obsL: u > .7, marks: true }) },
+    { name: 'Stop rule', dur: 9,
+      cap: 'Stop rule. Suppose content turns out to carry as much subtype as movement. Then the λ prior for the lexical channel has to match the motor one, the ring slides onto the dot, and the mirror comes back. The honest output is to abstain.',
+      state: u => { const k = ez((u - 1) / 4); return { ...base, pA: 1, pLm: .45, gA: 1, gLm: .55, pLex: 1, pLl: .15 + .30 * k, gLex: 1, gLl: .15 + .40 * k, gCross: 1 - k, lexShift: k, obsM: true, obsL: true, marks: true }; } },
+  ];
+
+  // ---------- dom ----------
+  const $ = id => document.getElementById(id);
+  const plane = $('plane'), ctx = plane.getContext('2d');
+  const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let scene = 0, u = reduced ? SCENES[0].dur : 0, playing = !reduced, explore = false;
+  const ex = { m: [.1, .9], l: [.7, .95], useL: true, sm: .3, sl: .3 };
+
+  const scenesEl = $('scenes');
+  const sceneBtns = SCENES.map((s, i) => {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.innerHTML = `${i + 1} · ${s.name}<span class="prog"></span>`;
+    b.addEventListener('click', () => { setExplore(false); scene = i; u = reduced && !playing ? s.dur : 0; syncUI(); });
+    scenesEl.appendChild(b);
+    return b;
+  });
+
+  const grid = $('grid');
+  grid.innerHTML = '<thead><tr><th class="row"></th>' + SUB.map((s, i) => `<th>${s}<small>→${T[i]}</small></th>`).join('') + '</tr></thead><tbody>' +
+    T.map((t, ti) => `<tr><th class="row" style="color:var(--c-${t})">${t}</th>` + SUB.map((_, si) => `<td id="c${ti * 4 + si}"></td>`).join('') + '</tr>').join('') + '</tbody>';
+  const cells = Array.from({ length: 16 }, (_, i) => $('c' + i));
+  const barT = $('barT'), barS = $('barS');
+  const segs = el => T.map(t => { const s = document.createElement('span'); s.style.background = `var(--c-${t})`; el.appendChild(s); return s; });
+  const segT = segs(barT), segS = segs(barS);
+  const verdict = $('verdict'), caption = $('caption');
+
+  $('play').addEventListener('click', () => { if (explore) setExplore(false); playing = !playing; if (playing && u >= SCENES[scene].dur) u = 0; syncUI(); });
+  $('exploreBtn').addEventListener('click', () => setExplore(!explore));
+  $('useL').addEventListener('change', e => { ex.useL = e.target.checked; });
+  $('sm').addEventListener('input', e => { ex.sm = +e.target.value; $('smV').textContent = ex.sm.toFixed(2); });
+  $('sl').addEventListener('input', e => { ex.sl = +e.target.value; $('slV').textContent = ex.sl.toFixed(2); });
+
+  function setExplore(on) {
+    explore = on;
+    if (on) {
+      playing = false;
+      const st = SCENES[scene].state(u);
+      ex.m = mix(P.t, P.s, st.pLm || .45);
+      ex.l = mix(P.t, P.s, st.pLex ? st.pLl : .15);
+    }
+    plane.style.touchAction = on ? 'none' : 'auto';
+    plane.style.cursor = on ? 'grab' : 'default';
+    syncUI();
+  }
+  function syncUI() {
+    $('explorePanel').hidden = !explore;
+    $('exploreBtn').setAttribute('aria-pressed', String(explore));
+    $('play').textContent = playing ? 'Pause' : 'Play';
+    sceneBtns.forEach((b, i) => b.setAttribute('aria-pressed', String(!explore && i === scene)));
+    caption.innerHTML = explore
+      ? '<span class="n">explore</span>Move the readings and watch the grid. The faint threads show the two strongest explanations, each with its most likely λ.'
+      : `<span class="n">${scene + 1}/${SCENES.length}</span>${SCENES[scene].cap}`;
+  }
+
+  // ---------- theme ----------
+  let col = {};
+  function readTheme() {
+    const s = getComputedStyle(document.documentElement);
+    const v = k => s.getPropertyValue(k).trim();
+    col = { bg: v('--bg'), ink: v('--ink'), muted: v('--muted'), faint: v('--faint'), line: v('--line'), warn: v('--warn'), t: T.map(t => v('--c-' + t)) };
+  }
+  readTheme();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', readTheme);
+  new MutationObserver(readTheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'class', 'style'] });
+
+  // ---------- canvas geometry ----------
+  let W = 0, H = 0, dpr = 1, pad = 40;
+  function resize() {
+    dpr = Math.min(2, window.devicePixelRatio || 1);
+    const r = plane.getBoundingClientRect();
+    W = r.width; H = r.height;
+    plane.width = Math.round(W * dpr); plane.height = Math.round(H * dpr);
+    pad = Math.max(34, Math.min(58, W * .08));
+  }
+  new ResizeObserver(resize).observe(plane);
+  resize();
+  const px = p => [pad + (p[0] + R) / (2 * R) * (W - 2 * pad), pad + (R - p[1]) / (2 * R) * (H - 2 * pad)];
+  const unpx = (x, y) => [((x - pad) / (W - 2 * pad)) * 2 * R - R, R - ((y - pad) / (H - 2 * pad)) * 2 * R];
+  const unit = () => (W - 2 * pad) / (2 * R);
+
+  // ---------- particles ----------
+  const ambient = Array.from({ length: 240 }, () => spawnAmbient(true));
+  function spawnAmbient(randomAge) {
+    const b = Math.floor(Math.random() * 4);
+    const a = Math.random() * Math.PI * 2, r = .15 + Math.random() * .7;
+    return { b, x: C[b][0] + Math.cos(a) * r, y: C[b][1] + Math.sin(a) * r, age: randomAge ? Math.random() * 6 : 0, life: 4 + Math.random() * 4 };
+  }
+  const samples = [];
+  const gauss = () => { let a = 0; for (let i = 0; i < 6; i++) a += Math.random(); return a - 3; };
+  function addSample(kind, p, sig) {
+    if (samples.length > 420) samples.shift();
+    samples.push({ kind, x: p[0] + gauss() * sig * .7, y: p[1] + gauss() * sig * .7, age: 0, life: 1.4 + Math.random() * .8 });
+  }
+
+  // ---------- drawing ----------
+  const alpha = (c, a) => { ctx.globalAlpha = a; return c; };
+  function drawPlane(st) {
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.fillStyle = col.bg; ctx.fillRect(0, 0, W, H);
+    const [x0, y0] = px([-R, R]), [x1, y1] = px([R, -R]), [cx, cy] = px([0, 0]);
+    // quadrant tints
+    T.forEach((t, i) => {
+      ctx.fillStyle = alpha(col.t[i], .045 * st.anchors);
+      const qx = C[i][0] < 0 ? x0 : cx, qy = C[i][1] > 0 ? y0 : cy;
+      ctx.fillRect(qx, qy, cx - x0, cy - y0);
+    });
+    ctx.globalAlpha = 1;
+    // frame + axes
+    ctx.strokeStyle = col.line; ctx.lineWidth = 1;
+    ctx.strokeRect(x0 + .5, y0 + .5, x1 - x0 - 1, y1 - y0 - 1);
+    ctx.strokeStyle = col.faint;
+    ctx.beginPath(); ctx.moveTo(cx + .5, y0); ctx.lineTo(cx + .5, y1); ctx.moveTo(x0, cy + .5); ctx.lineTo(x1, cy + .5); ctx.stroke();
+    // ticks
+    ctx.fillStyle = col.muted; ctx.font = `12px ${getFont('mono')}`; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+    [-1, 0, 1].forEach(v => { const [tx] = px([v, 0]); ctx.fillText(v > 0 ? '+1' : String(v), tx, y1 + 5); ctx.beginPath(); ctx.moveTo(tx + .5, y1); ctx.lineTo(tx + .5, y1 + 3); ctx.stroke(); });
+    ctx.textAlign = 'left'; ctx.fillText('← extraverted', x0, y1 + 20); ctx.textAlign = 'right'; ctx.fillText('introverted →', x1, y1 + 20);
+    ctx.save(); ctx.translate(x0 - 12, (y0 + y1) / 2); ctx.rotate(-Math.PI / 2); ctx.textAlign = 'center'; ctx.textBaseline = 'bottom';
+    ctx.fillText('← perceiving      judging →', 0, 0); ctx.restore();
+  }
+  let fontFamilies = null;
+  function getFont(k) {
+    if (!fontFamilies) { const s = getComputedStyle(document.documentElement); fontFamilies = { mono: s.getPropertyValue('--mono').trim(), sans: s.getPropertyValue('--sans').trim() }; }
+    return fontFamilies[k];
+  }
+  function drawAnchors(st) {
+    const a = st.anchors;
+    if (a <= 0) return;
+    T.forEach((t, i) => {
+      const [x, y] = px(C[i]);
+      ctx.fillStyle = alpha(col.t[i], .14 * a); ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.fill();
+      ctx.fillStyle = alpha(col.t[i], a); ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+      const left = C[i][0] < 0, top = C[i][1] > 0;
+      ctx.textAlign = left ? 'left' : 'right';
+      const lx = x + (left ? -14 : 14), ly = y + (top ? -70 : 32);
+      ctx.textBaseline = 'top';
+      ctx.font = `600 17px ${getFont('mono')}`; ctx.fillStyle = alpha(col.t[i], a);
+      ctx.fillText(`${t} / ${SUB[i]}`, lx, ly);
+      ctx.font = `12.5px ${getFont('mono')}`; ctx.fillStyle = alpha(col.muted, a);
+      ctx.fillText(TNAME[t], lx, ly + 22);
+    });
+    ctx.globalAlpha = 1;
+  }
+  function drawThread(t, s, a, dashed) {
+    if (a <= .01 || t === s) return;
+    const [xa, ya] = px(C[t]), [xb, yb] = px(C[s]);
+    const grad = ctx.createLinearGradient(xa, ya, xb, yb);
+    grad.addColorStop(0, col.t[t]); grad.addColorStop(1, col.t[s]);
+    ctx.strokeStyle = grad; ctx.lineWidth = 2; ctx.globalAlpha = .55 * a;
+    ctx.setLineDash(dashed ? [4, 5] : []);
+    ctx.beginPath(); ctx.moveTo(xa, ya); ctx.lineTo(xb, yb); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.fillStyle = col.t[t]; ctx.globalAlpha = a;
+    ctx.beginPath(); ctx.arc(xa, ya, 10, 0, Math.PI * 2); ctx.lineWidth = 2; ctx.strokeStyle = col.t[t]; ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  function drawDot(p, a, dashed, sig) {
+    if (a <= .01) return;
+    const [x, y] = px(p);
+    if (sig) { ctx.strokeStyle = col.muted; ctx.globalAlpha = .35 * a; ctx.setLineDash([2, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, sig * unit(), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.globalAlpha = a;
+    if (dashed) { ctx.strokeStyle = col.ink; ctx.setLineDash([2, 3]); ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+    else { ctx.fillStyle = col.ink; ctx.beginPath(); ctx.arc(x, y, 9, 0, Math.PI * 2); ctx.fill(); ctx.fillStyle = col.bg; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.fill(); }
+    ctx.globalAlpha = 1;
+  }
+  function drawRing(p, a, dashed, sig) {
+    if (a <= .01) return;
+    const [x, y] = px(p);
+    if (sig) { ctx.strokeStyle = col.muted; ctx.globalAlpha = .3 * a; ctx.setLineDash([2, 4]); ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, sig * unit(), 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]); }
+    ctx.globalAlpha = a; ctx.strokeStyle = col.ink; ctx.lineWidth = 2.6;
+    ctx.setLineDash(dashed ? [4, 4] : []);
+    ctx.beginPath(); ctx.arc(x, y, 14, 0, Math.PI * 2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  }
+  function drawCross(p, a) {
+    if (a <= .01) return;
+    const [x, y] = px(p), r = 19;
+    ctx.strokeStyle = col.warn; ctx.globalAlpha = a; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x - r, y - r); ctx.lineTo(x + r, y + r); ctx.moveTo(x + r, y - r); ctx.lineTo(x - r, y + r); ctx.stroke();
+    ctx.globalAlpha = 1;
+  }
+  function tag(p, text, a, dy) {
+    if (a <= .01) return;
+    const [x, y] = px(p);
+    ctx.font = `13px ${getFont('mono')}`; ctx.fillStyle = col.ink; ctx.globalAlpha = a * .85;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(text, x, y + dy);
+    ctx.globalAlpha = 1;
+  }
+
+  // ---------- grid + verdict ----------
+  const disp = new Float64Array(16).fill(1 / 16);
+  let lastVerdict = '';
+  function updateGrid(post, dt, truth, ghost, hasObs) {
+    const k = reduced ? 1 : 1 - Math.exp(-dt * 6);
+    for (let i = 0; i < 16; i++) disp[i] += (post[i] - disp[i]) * k;
+    const mT = [0, 0, 0, 0], mS = [0, 0, 0, 0];
+    for (let i = 0; i < 16; i++) {
+      const t = i >> 2, s = i & 3, p = disp[i];
+      mT[t] += p; mS[s] += p;
+      const c = cells[i];
+      c.style.background = `color-mix(in srgb, var(--c-${T[t]}) ${Math.round(Math.min(1, p * 1.6) * 85)}%, transparent)`;
+      c.style.color = p > .38 ? 'var(--bg)' : 'var(--ink)';
+      c.textContent = p < .005 ? '·' : (p < .01 ? '<1%' : Math.round(p * 100) + '%');
+      c.classList.toggle('is-true', i === truth);
+      c.classList.toggle('is-ghost', i === ghost);
+    }
+    mT.forEach((v, i) => { segT[i].style.width = (v * 100).toFixed(2) + '%'; });
+    mS.forEach((v, i) => { segS[i].style.width = (v * 100).toFixed(2) + '%'; });
+
+    const order = [...post.keys()].sort((a, b) => post[b] - post[a]);
+    const b1 = order[0], b2 = order[1];
+    const nm = i => `${T[i >> 2]}·${SUB[i & 3]}`;
+    let html, abst = false;
+    const mirror = (b1 >> 2) === (b2 & 3) && (b2 >> 2) === (b1 & 3);
+    if (!hasObs) html = 'Prior only. Every cell starts at 6.25%.';
+    else if (post[b1] < .6 || (mirror && post[b2] > post[b1] / 2)) {
+      abst = true;
+      html = `<b>Abstain.</b> ${nm(b1)} ${Math.round(post[b1] * 100)}% vs ${nm(b2)} ${Math.round(post[b2] * 100)}%` + (mirror ? ' is a mirror pair.' : '.');
+    } else html = `<b>Leading:</b> ${T[b1 >> 2]} type, ${SNAME[SUB[b1 & 3]]} subtype · ${Math.round(post[b1] * 100)}%`;
+    if (html !== lastVerdict) { verdict.innerHTML = html; verdict.classList.toggle('abstain', abst); lastVerdict = html; }
+    return order;
+  }
+
+  // ---------- pointer (explore) ----------
+  let drag = null;
+  plane.addEventListener('pointerdown', e => {
+    if (!explore) return;
+    const r = plane.getBoundingClientRect(), x = e.clientX - r.left, y = e.clientY - r.top;
+    const near = p => { const [qx, qy] = px(p); return Math.hypot(qx - x, qy - y); };
+    const dm = near(ex.m), dl = ex.useL ? near(ex.l) : Infinity;
+    if (Math.min(dm, dl) < 26) { drag = dl < dm ? 'l' : 'm'; plane.setPointerCapture(e.pointerId); plane.style.cursor = 'grabbing'; }
+  });
+  plane.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const r = plane.getBoundingClientRect();
+    const p = unpx(e.clientX - r.left, e.clientY - r.top).map(v => clamp(v, -R + .05, R - .05));
+    ex[drag] = p;
+  });
+  const endDrag = () => { drag = null; if (explore) plane.style.cursor = 'grab'; };
+  plane.addEventListener('pointerup', endDrag);
+  plane.addEventListener('pointercancel', endDrag);
+
+  // ---------- loop ----------
+  let last = performance.now(), sampleAcc = 0;
+  const recording = location.hash === '#record';
+  if (recording) document.documentElement.classList.add('rec');
+  function frame(now) {
+    const dt = Math.min(.05, (now - last) / 1000); last = now;
+    step(dt);
+    requestAnimationFrame(frame);
+  }
+  // Record mode (#record): no RAF; a capture script calls __step(dt) once per frame.
+  window.__step = dt => step(dt);
+  window.__total = SCENES.reduce((a, s) => a + s.dur, 0);
+  function step(dt) {
+    if (playing && !explore) {
+      u += dt;
+      if (u > SCENES[scene].dur) { scene = (scene + 1) % SCENES.length; u = 0; syncUI(); }
+    }
+    sceneBtns.forEach((b, i) => { b.firstElementChild.style.width = (!explore && i === scene ? clamp(u / SCENES[scene].dur) * 100 : 0) + '%'; });
+
+    let st, obs;
+    if (explore) {
+      st = { ...base, anchors: 1, ambient: .3 };
+      obs = { m: ex.m, l: ex.l, useM: true, useL: ex.useL, sm: ex.sm, sl: ex.sl };
+    } else {
+      st = SCENES[scene].state(u);
+      const k = st.lexShift || 0;
+      obs = { m: mix(P.t, P.s, st.pLm), l: mix(P.t, P.s, st.pLl), useM: st.obsM, useL: st.obsL, sm: .3, sl: .3, WL: k ? WL.map((w, i) => (1 - k) * w + k * WM[i]) : WL };
+    }
+    const post = posterior(obs);
+    const truthIdx = st.marks ? P.t * 4 + P.s : -1;
+    const ghostIdx = st.marks && st.gA > .2 ? G.t * 4 + G.s : -1;
+    const order = updateGrid(post, dt, truthIdx, ghostIdx, obs.useM || obs.useL);
+
+    drawPlane(st);
+
+    // ambient field
+    if (!reduced) {
+      for (const q of ambient) {
+        q.age += dt;
+        const [cx, cy] = C[q.b], dx = cx - q.x, dy = cy - q.y;
+        q.x += (dx * .25 - dy * .35) * dt; q.y += (dy * .25 + dx * .35) * dt;
+        if (q.age > q.life) Object.assign(q, spawnAmbient(false));
+      }
+    }
+    for (const q of ambient) {
+      const life = clamp(Math.sin(Math.PI * q.age / q.life));
+      const [x, y] = px([q.x, q.y]);
+      ctx.fillStyle = col.t[q.b]; ctx.globalAlpha = .5 * life * st.ambient * st.anchors;
+      ctx.fillRect(x - 1.1, y - 1.1, 2.2, 2.2);
+    }
+    ctx.globalAlpha = 1;
+
+    // measurement samples
+    if (!reduced) {
+      sampleAcc += dt * 70;
+      while (sampleAcc > 1) {
+        sampleAcc -= 1;
+        if (obs.useM) addSample('m', obs.m, obs.sm);
+        if (obs.useL && (explore || st.pLex > .5)) addSample('l', obs.l, obs.sl);
+      }
+      for (let i = samples.length - 1; i >= 0; i--) { samples[i].age += dt; if (samples[i].age > samples[i].life) samples.splice(i, 1); }
+      for (const q of samples) {
+        const [x, y] = px([q.x, q.y]), f = 1 - q.age / q.life;
+        ctx.globalAlpha = .45 * f;
+        if (q.kind === 'm') { ctx.fillStyle = col.ink; ctx.fillRect(x - 1.3, y - 1.3, 2.6, 2.6); }
+        else { ctx.strokeStyle = col.ink; ctx.lineWidth = 1; ctx.beginPath(); ctx.arc(x, y, 3, 0, Math.PI * 2); ctx.stroke(); }
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    drawAnchors(st);
+
+    if (explore) {
+      order.slice(0, 2).forEach((idx, k) => {
+        const t = idx >> 2, s = idx & 3, a = k === 0 ? .9 : clamp(post[idx] / post[order[0]]) * .8;
+        drawThread(t, s, a, k === 1);
+        if (t !== s) {
+          drawDot(mix(t, s, mapLam(obs.m, t, s, obs.sm, WM)), a * .5, true);
+          if (obs.useL) drawRing(mix(t, s, mapLam(obs.l, t, s, obs.sl, WL)), a * .5, true);
+        }
+      });
+      drawDot(obs.m, 1, false, obs.sm);
+      if (obs.useL) drawRing(obs.l, 1, false, obs.sl);
+      tag(obs.m, 'motor', 1, -26);
+      if (obs.useL) tag(obs.l, 'lexical', 1, 30);
+    } else {
+      const ratio = post[G.t * 4 + G.s] / Math.max(1e-9, post[P.t * 4 + P.s]);
+      const gA = st.gA * (.25 + .75 * clamp(ratio * 1.2));
+      drawThread(P.t, P.s, st.pA, false);
+      drawThread(G.t, G.s, gA, true);
+      if (st.gA > .01) {
+        const gm = mix(G.t, G.s, st.gLm), gl = mix(G.t, G.s, st.gLl);
+        drawDot(gm, gA * .9, true);
+        drawRing(gl, st.gLex * gA, true);
+        drawCross(gl, st.gCross * st.gLex);
+        tag(gl, 'mirror predicts', st.gLex * gA * (1 - st.gCross * .4), 30);
+      }
+      if (st.pA > .01) {
+        drawDot(obs.m, st.pA, false, obs.useM ? obs.sm : 0);
+        tag(obs.m, `motor · λ=${st.pLm.toFixed(2)}`, st.pA, -26);
+        drawRing(obs.l, st.pLex, false, obs.useL ? obs.sl : 0);
+        tag(obs.l, `lexical · λ=${st.pLl.toFixed(2)}`, st.pLex, 30);
+      }
+    }
+  }
+  syncUI();
+  if (!recording) requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
